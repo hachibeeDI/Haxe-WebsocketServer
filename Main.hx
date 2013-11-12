@@ -115,24 +115,9 @@ class WebSocketServer extends ThreadServer<Client, Message> {
         trace("len = " + Std.string(len) + " id = " + c.id);
         trace(msg);
         // シェイクハンド確立部分
-        var maybe_headers = msg.split("\r\n");
-        if (maybe_headers.length > 5) {
-            for (l in maybe_headers) {
-                switch (l.split(" ")) {
-                    case ["Origin:", hostname]: c.host = hostname;
-                    case ["Sec-WebSocket-Key:", key]:
-                                             trace("keyget!");
-                                             c.key = key;
-                    case v: trace(v);
-                }
-            }
-            if (!c.is_hand_shaked && c.key != null) {
-                var decoded_key = WebSocket.decode(c.key);
-                // WebSocket.send_hand_shake(c.soc, decoded_key);
-                this.sendData(c.soc, WebSocket.get_hand_shake(decoded_key));
-                c.is_hand_shaked = true;
-                trace('!! shake handed !!');
-            }
+        if (!c.is_hand_shaked) {
+            this.hand_shake(c, msg);
+            return {msg: {str: msg}, bytes: len};
         }
         trace('============================== get end\n');
         return {msg: {str: msg}, bytes: len};
@@ -147,6 +132,31 @@ class WebSocketServer extends ThreadServer<Client, Message> {
 
     override function clientDisconnected(c: Client): Void {
         trace(c.id + " is disconnected.");
+    }
+
+    function hand_shake(c: Client, msg: String) {
+        var maybe_headers = msg.split("\r\n");
+        if (maybe_headers.length > 5) {
+            for (l in maybe_headers) {
+                switch (l.split(" ")) {
+                    case ["Origin:", hostname]: c.host = hostname;
+                    case ["Sec-WebSocket-Key:", key]:
+                                             trace("keyget!");
+                                             c.key = key;
+                    case v: trace(v);
+                }
+            }
+            if (c.key != null) {
+                var decoded_key = WebSocket.decode(c.key);
+                // WebSocket.send_hand_shake(c.soc, decoded_key);
+                this.sendData(c.soc, WebSocket.get_hand_shake(decoded_key));
+                c.is_hand_shaked = true;
+                trace('!! shake handed !!');
+            } else {
+                throw "Invalid header";
+            }
+        }
+
     }
 }
 
