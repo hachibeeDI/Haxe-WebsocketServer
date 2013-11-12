@@ -5,6 +5,7 @@ import haxe.crypto.BaseCode;
 import sys.net.Socket;
 import neko.Lib;
 import neko.net.ThreadServer;
+import neko.net.ServerLoop;
 import haxe.ds.Option;
 import haxe.io.Bytes;
 import neko.vm.Deque;
@@ -23,7 +24,13 @@ class Main {
         trace("start server");
         var webs = new WebSocketServer();
         webs.run("localhost", 1234);
+        trace("server halt");
     }
+}
+
+
+class WebSocketProcol extends haxe.remoting.SocketProtocol {
+
 }
 
 
@@ -38,7 +45,6 @@ class WebSocket {
         for (i in 0...Std.int(holder.length / 2)) {
             data += String.fromCharCode(Std.parseInt("0x" + holder.substr(i * 2, 2)));
         }
-        trace('------------encoded sha ${data}');
 
         var suffix = switch (data.length % 3) {
             case 2: "=";
@@ -52,22 +58,25 @@ class WebSocket {
       * @param sec_websocket_key
       * 
      */
-    public static function send_hand_shake(socket: Socket, sec_websocket_key: String)
+    public static function get_hand_shake(sec_websocket_key: String): String
     {
         var s = 'HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${sec_websocket_key}\r\n\r\n';
-        socket
-            .output
-            .writeString(s);
-        trace(s);
-        trace("send hand shake!!!!!!!!!!!");
+        return s;
+        // socket
+        //     .output
+        //     .writeString(s);
+        // trace("send hand shake!!!!!!!!!!!");
     }
 }
 
 
 
 typedef Client = {
-  var id: Int;
-  var soc: Socket;
+    var id: Int;
+    var soc: Socket;
+    var host: String;
+    var key: String;
+    var is_hand_shaked: Bool;
 }
 
 typedef Message = {
@@ -91,42 +100,53 @@ class WebSocketServer extends ThreadServer<Client, Message> {
     override function clientConnected(soc: Socket): Client {
         trace("client connected...");
         var m_trace = function(m) { switch (m) {case Some(m): trace(m); case _: trace("failed!");}; }
-        return {id: Std.random(100), soc: soc};
+        return {
+            id: Std.random(100),
+            soc: soc,
+            host: "",
+            key: null,
+            is_hand_shaked: false
+        };
     }
 
     override function readClientMessage(c: Client, buf: Bytes, pos: Int, len: Int): { msg: Message, bytes: Int } {
-        // find out if there's a full message, and if so, how long it is.
-        var complete = false;
-        var cpos = pos;
-        while (cpos < (pos+len) && !complete)
-        {
-          complete = (buf.get(cpos) == 46);
-          cpos++;
-        }
-
-        // no full message
-        if( !complete ) return null;
-
-        // got a full message, return it
-        var msg: String = buf.readString(pos, cpos-pos);
-        var content = msg.split("\r\n");
-        if (content.length > 10) {
-            var key = content.filter(function(s) {return s.startsWith("Sec-WebSocket-Key"); });
-            if (key.length >= 1) {
-                var decoded_key = WebSocket.decode(key[0].split(" ")[1]);
-                trace('!!!!!!!!!!!!decoded_key is ${decoded_key}');
-                WebSocket.send_hand_shake(c.soc, decoded_key);
-                return {msg: {str: ""}, bytes: cpos - pos};
+        var msg: String = buf.readString(pos, len);
+        trace('get ============================== ');
+        trace("len = " + Std.string(len) + " id = " + c.id);
+        trace(msg);
+        // シェイクハンド確立部分
+        var maybe_headers = msg.split("\r\n");
+        if (maybe_headers.length > 5) {
+            for (l in maybe_headers) {
+                switch (l.split(" ")) {
+                    case ["Origin:", hostname]: c.host = hostname;
+                    case ["Sec-WebSocket-Key:", key]:
+                                             trace("keyget!");
+                                             c.key = key;
+                    case v: trace(v);
+                }
+            }
+            if (!c.is_hand_shaked && c.key != null) {
+                var decoded_key = WebSocket.decode(c.key);
+                // WebSocket.send_hand_shake(c.soc, decoded_key);
+                this.sendData(c.soc, WebSocket.get_hand_shake(decoded_key));
+                c.is_hand_shaked = true;
+                trace('!! shake handed !!');
             }
         }
-        trace('get ============================== ${msg}');
-        return {msg: {str: msg}, bytes: cpos - pos};
+        trace('============================== get end\n');
+        return {msg: {str: msg}, bytes: len};
     }
 
     override function clientMessage(c: Client, msg: Message): Void {
-        trace("received ==========");
-        trace(c.id + " sent: " + msg.str);
-        trace("==========received ");
+        // trace('${c.id} connected');
+        // trace("received ========== \n");
+        // trace(c.id + " sent: " + msg.str);
+        // trace("========== received  \n");
+    }
+
+    override function clientDisconnected(c: Client): Void {
+        trace(c.id + " is disconnected.");
     }
 }
 
