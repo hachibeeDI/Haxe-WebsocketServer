@@ -76,12 +76,20 @@ typedef Client = {
     var is_hand_shaked: Bool;
 }
 
+
+enum MessageType {
+    HandShake(v: String);
+    Content(v: String);
+}
+
 typedef Message = {
-  var str : String;
+  var content : MessageType;
 }
 
 
 class WebSocketServer extends ThreadServer<Client, Message> {
+
+    static var CONNECTED_SOCKETS(default, null): Array<Socket> = [];
 
     /**
       *
@@ -110,19 +118,21 @@ class WebSocketServer extends ThreadServer<Client, Message> {
         var msg: String = buf.readString(pos, len);
         trace('get ============================== ');
         trace("len = " + Std.string(len) + " id = " + c.id);
-        trace(msg);
         // シェイクハンド確立部分
         if (!c.is_hand_shaked) {
             this.hand_shake(c, msg);
-            return {msg: {str: msg}, bytes: len};
+            return {msg: {content: HandShake(msg)}, bytes: len};
         }
         var content = decode_message(buf, pos, len);
         trace(content);
         trace('============================== get end\n');
-        return {msg: {str: msg}, bytes: len};
+        return {msg: {content: Content(content)}, bytes: len};
     }
 
     override function clientMessage(c: Client, msg: Message): Void {
+        // var _send_data = this.sendData.bind(_, msg.str);
+        // CONNECTED_SOCKETS.iter(_send_data);
+
         // trace('${c.id} connected');
         // trace("received ========== \n");
         // trace(c.id + " sent: " + msg.str);
@@ -150,6 +160,7 @@ class WebSocketServer extends ThreadServer<Client, Message> {
                 // WebSocket.send_hand_shake(c.soc, decoded_key);
                 this.sendData(c.soc, WebSocket.get_hand_shake(decoded_key));
                 c.is_hand_shaked = true;
+                CONNECTED_SOCKETS.push(c.soc);
                 trace('!! shake handed !!');
             } else {
                 throw "Invalid header";

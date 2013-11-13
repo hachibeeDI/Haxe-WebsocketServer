@@ -15,11 +15,12 @@
                 var resultAreaObj = document.getElementById('result');
                 resultAreaObj.innerHTML += '<span class="log">onopen</span>' + '<br>';
                 console.log(e);
-                ws.send("hi this is client!!");
+                ws.send('hello server');
             };
             ws.onclose = function (e) {
                 var resultAreaObj = document.getElementById('result');
                 resultAreaObj.innerHTML += '<span class="log">onclose</span>' + '<br>'
+                console.log(e);
             };
             ws.onmessage = function (e) {
                 console.log(e)
@@ -27,6 +28,7 @@
                 message.innerHTML += e.data + '<br>'
             };
             ws.onerror = function () {
+                console.log(e);
                 var resultAreaObj = document.getElementById('result');
                 resultAreaObj.innerHTML += '<span class="log">onerror</span>' + '<br>'
             };
@@ -34,7 +36,7 @@
                 var textFieldObj = document.getElementById('textField');
                 var data = textFieldObj.value;
                 if (data) {
-                    ws.send(data);
+                    ws.send(''+data);
                     textFieldObj.value = '';
                 }
             };
