@@ -134,13 +134,12 @@ class WebSocketServer extends ThreadServer<Client, Message> {
     }
 
     override function clientMessage(c: Client, msg: Message): Void {
-        // var _send_data = this.sendData.bind(_, msg.str);
-        // CONNECTED_SOCKETS.iter(_send_data);
-
-        // trace('${c.id} connected');
-        // trace("received ========== \n");
-        // trace(c.id + " sent: " + msg.str);
-        // trace("========== received  \n");
+        switch (msg.content) {
+            case Content(s):
+                trace(c.id + " sent: " + s);
+                c.soc.output.write(this.encode_message(s).getBytes());
+            case _: 'null';
+        }
     }
 
     override function clientDisconnected(c: Client): Void {
