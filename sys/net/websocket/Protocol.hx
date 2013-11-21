@@ -6,7 +6,13 @@ import haxe.ds.Vector;
 import haxe.io.Bytes;
 import haxe.io.BytesOutput;
 import haxe.io.BytesInput;
-import neko.net.ThreadServer;
+#if neko
+    import neko.net.ThreadServer;
+#else
+    typedef ThreadServer = {
+        function sendData(Socket, String): Void;
+    }
+#end
 
 import sys.net.websocket.api.Client;
 import sys.net.websocket.api.Message;
