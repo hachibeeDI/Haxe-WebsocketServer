@@ -1,0 +1,11 @@
+{
+  "name": "Haxe-WebsocketServer",
+  "url" : "https://github.com/hachibeeDI/Haxe-WebsocketServer",
+  "license": "MIT",
+  "tags": ["neko", "websocket"],
+  "description": "websocket server support for neko",
+  "version": "0.0.1",
+  "releasenote": "support only text frame",
+  "contributors": ["OGURA_Daiki"],
+  "dependencies": {}
+}
