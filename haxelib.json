@@ -1,5 +1,5 @@
 {
-  "name": "Haxe-WebsocketServer",
+  "name": "nyansocket",
   "url" : "https://github.com/hachibeeDI/Haxe-WebsocketServer",
   "license": "MIT",
   "tags": ["neko", "websocket"],
