@@ -12,6 +12,9 @@ import haxe.io.Bytes;
 import haxe.io.BytesInput;
 import neko.vm.Deque;
 
+import sys.net.websocket.OPCODE;
+using sys.net.websocket.OpcodeUtils;
+
 
 using StringTools;
 using Lambda;
@@ -179,7 +182,7 @@ class WebSocketServer extends ThreadServer<Client, Message> {
         // 10000000 & 10000000 == 10000000  一番左端のビットが立っているかどうかの計算
         var fin: Bool = (fin_rsv_opcode & 0x80) == 0x80;
         var opcode = fin_rsv_opcode & 0x0f;
-        if (opcode == OPCODE.Text) {
+        if (OPCODE.Text.equals(opcode)) {
             var data_header = datas.readByte();
             var is_masked: Bool = (data_header & 0x80) == 0x80;
             if (!is_masked) { throw "Client should mask datas."; }
@@ -219,34 +222,9 @@ class WebSocketServer extends ThreadServer<Client, Message> {
             throw "NotImplemented 工事中";
         }
     }
+
+    function encode_message(data, opcode: OPCODE) {
+    }
 }
 
-
-/**
-  * 
-  * - opcodeについて
-  * %x0 は継続フレームを表す
-  * %x1 はテキストフレームを表す
-  * %x2 はバイナリフレームを表す
-  * %x3-7 は追加の非制御フレーム用に予約済み
-  * %x8 は接続の切断を表す
-  * %x9 は ping を表す
-  * %xA は pong を表す
-  * %xB-F は追加の制御フレーム用に予約済み
- */
-class OPCODE {
-    public static inline var Continuation = 0x00;
-    public static inline var Text = 0x01;
-    public static inline var Binary = 0x02;
-    public static inline var Close = 0x08;
-    public static inline var Ping = 0x09;
-    public static inline var Pong = 0x0A;
-
-    // public static inline var RECEIVED1 = 0x03;
-    // public static inline var RECEIVED2 = 0x04;
-    // public static inline var RECEIVED3 = 0x05;
-    // public static inline var RECEIVED4 = 0x06;
-    // public static inline var RECEIVED5 = 0x07;
-    // B-Fも予約済み
-}
 

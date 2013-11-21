@@ -1,3 +1,2 @@
-
--neko main.n
+-neko bin/main.n
 -main Main
