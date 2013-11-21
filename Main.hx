@@ -10,6 +10,7 @@ import haxe.ds.Option;
 import haxe.ds.Vector;
 import haxe.io.Bytes;
 import haxe.io.BytesInput;
+import haxe.io.BytesOutput;
 import neko.vm.Deque;
 
 import sys.net.websocket.OPCODE;
@@ -223,7 +224,38 @@ class WebSocketServer extends ThreadServer<Client, Message> {
         }
     }
 
-    function encode_message(data, opcode: OPCODE) {
+    /**
+      * this method is for servers, so FrameMasking will not define.
+      * @param data: TODO: define abstract data type from String to Byte or Int
+     */
+    function encode_message(data: String, ?opcode: OPCODE): BytesOutput {
+        if (opcode == null) opcode = Text;
+        var buf = new BytesOutput();
+        // 1|0|0|0 | opcode
+        buf.writeByte(0x80 | opcode.to_byte());
+
+        var data_length = data.length;
+        var payload_len = switch (data_length) {
+                case i if (i <= 125): i;
+                case i if (i <= 65535): 126;
+                case i: 127;
+            }
+        buf.writeByte(0x00 | payload_len);  // ignore Mask
+
+        if (payload_len == 126) {
+            // data len interpret 2 bytes
+            buf.writeByte((data_length >> 8) & 0xFF);
+            buf.writeByte(data_length & 0xFF);
+        }
+        else if (payload_len == 127) {
+            // data len interpret 4 bytes
+            buf.writeByte((data_length >> 24) & 0xFF);
+            buf.writeByte((data_length >> 16) & 0xFF);
+            buf.writeByte((data_length >> 8) & 0xFF);
+            buf.writeByte(data_length & 0xFF);
+        }
+        buf.writeString(data);
+        return buf;
     }
 }
 

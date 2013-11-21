@@ -3,7 +3,7 @@ package sys.net.websocket;
 
 class OpcodeUtils {
 
-    public static function  equals (code: OPCODE, arg: Int) {
+    public static function equals (code: OPCODE, arg: Int) {
         return to_byte(code) == arg;
     }
 
