@@ -3,7 +3,7 @@ package neko.net.websocket;
 import sys.net.Socket;
 import neko.net.ThreadServer;
 import haxe.io.Bytes;
-
+using Lambda;
 
 import sys.net.websocket.Protocol;
 import sys.net.websocket.api.Client;
@@ -13,9 +13,14 @@ using sys.net.websocket.OpcodeUtils;
 
 
 class WebSocketServer extends ThreadServer<Client, Message> {
+    public static var connected_clients_(default, null): Array<Client> = [];
 
-    static var CONNECTED_SOCKETS(default, null): Array<Socket> = [];
+    public var onmessage(default, default): Array<Client -> Bytes -> Void>;
 
+    public function new() {
+        super();
+        this.onmessage = [];
+    }
 
     /**
       *
@@ -50,8 +55,12 @@ class WebSocketServer extends ThreadServer<Client, Message> {
     override function clientMessage(c: Client, msg: Message): Void {
         switch (msg.content) {
             case Content(s):
-                // trace(c.id + " sent: " + s);
-                c.soc.output.write(Protocol.encode_message(s).getBytes());
+                var _msg = Protocol.encode_message(s).getBytes();
+                if (this.onmessage.length == 1) {
+                    this.onmessage[0](c, _msg);
+                } else if (this.onmessage.length != 0) {
+                    this.onmessage.iter(function(f) { f(c, _msg); });
+                }
             case _: 'null';
         }
     }
@@ -67,6 +76,6 @@ class WebSocketServer extends ThreadServer<Client, Message> {
         c.is_hand_shaked = true;
         c.host = req.host;
 
-        CONNECTED_SOCKETS.push(c.soc);
+        connected_clients_.push(c);
     }
 }
