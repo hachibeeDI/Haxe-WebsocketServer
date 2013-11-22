@@ -50,31 +50,48 @@ class WebSocketServer extends ThreadServer<Client, Message> {
         var content = Protocol.decode_message(buf, pos, len);
         trace(content);
         var msg = switch (content) {
-            case Text(st): st;
+            case Text(st): "null";
             case Close(reason):
-                this.stopClient(c.soc);
+                var _sock = c.soc;
+                // response Close frame
+                _sock.output.write(Protocol.encode_message(content).getBytes());
+                // this.stopClient(c.soc);  FIXME: I don't really know why, but this method made stop server too.
+                // c.soc.close();
+                // === SouceCode on Github: https://github.com/HaxeFoundation/haxe/blob/development/std/neko/net/ThreadServer.hx ===
+                //     If only call sock.close cause pooling error in threadloop, so we may have to drop socket object from thread's member.
+                var infos = _sock.custom;  // ClientInfos<Client>
+                infos.thread.socks.remove(_sock);
+                // ==========================================================================================
+                this.doClientDisconnected(_sock, c);
                 reason;
             case _: throw 'unsupported opcode';
         }
         trace('============================== get end\n');
-        return {msg: {content: Content(msg)}, bytes: len};
+        return {msg: {content: Content(content)}, bytes: len};
     }
 
     override function clientMessage(c: Client, msg: Message): Void {
         switch (msg.content) {
-            case Content(s):
-                var _msg = Protocol.encode_message(OPCODE.Text(s))
-                               .getBytes();
-                if (this.onmessage.length == 1) {
-                    this.onmessage[0](c, _msg);
-                } else if (this.onmessage.length != 0) {
-                    this.onmessage.iter(function(f) { f(c, _msg); });
+            case Content(op):
+                switch (op) {
+                    case Close(reason): "null";
+                    case Text(v):
+                        var _msg = Protocol.encode_message(op)
+                                       .getBytes();
+                        if (this.onmessage.length == 1) {
+                            this.onmessage[0](c, _msg);
+                        } else if (this.onmessage.length != 0) {
+                            this.onmessage.iter(function(f) { f(c, _msg); });
+                        }
+                    case _: throw "unsuported opcode";
                 }
             case _: 'null';
         }
     }
 
     override function clientDisconnected(c: Client): Void {
+        WebSocketServer.connected_clients_.remove(c);
+
         trace(c.id + " is disconnected.");
     }
 

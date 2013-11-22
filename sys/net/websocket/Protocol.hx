@@ -150,6 +150,7 @@ class Protocol {
     public static function encode_message(opcode: OPCODE): BytesOutput {
         return switch (opcode) {
             case Text(s): return encode_text(s);
+            case Close(reason): return encode_text(reason);
             case _: throw "NotImplemented 工事中";
         }
     }
