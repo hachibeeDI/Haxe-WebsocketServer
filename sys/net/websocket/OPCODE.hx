@@ -18,7 +18,7 @@ enum OPCODE {
     Continuation(v: String);
     Text(v: String);
     Binary(v: BytesOutput);
-    Close;
+    Close(reason: String);
     Ping(v: String);
     Pong(v: String);
 }

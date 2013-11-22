@@ -105,35 +105,42 @@ class Protocol {
         // 10000000 & 10000000 == 10000000  一番左端のビットが立っているかどうかの計算
         var fin: Bool = (fin_rsv_opcode & 0x80) == 0x80;
         var opcode = fin_rsv_opcode & 0x0f;
-        if (opcode == OpcodeUtils.Text) {
-            var data_header = datas.readByte();
-            var is_masked: Bool = (data_header & 0x80) == 0x80;
-            if (!is_masked) { throw "Client should mask datas."; }
-            var decode_payload_length =
-                function(len_of_byte: Int) {
-                    var _payload = datas.read(len_of_byte).toHex();
-                    trace('payload data = ${_payload}');
-                    return Std.parseInt(_payload);
-                }
-            var payload_length = switch (data_header & 0x7f) {
-                                  case 126: decode_payload_length(2);
-                                  case 127: decode_payload_length(2);
-                                  case i: i;
-                              }
-            var masking_key: Vector<Int> = new Vector(4);
-                [for (i in 0...4) masking_key.set(i, datas.readByte())];
-            // var payload_datas = datas.read(payload_length);
-            var decoded_payload_data = [
-                for (i in 0...payload_length)
-                    // payload_datas.get(i) ^ masking_key[i % 4]
-                    datas.readByte() ^ masking_key[i % 4]
-                ];
-            var result = new StringBuf();
-            decoded_payload_data.iter(function(c) { result.addChar(c); });
-            return OPCODE.Text(result.toString());
-        } else {
-            throw "NotImplemented 工事中";
+        return switch (opcode) {
+            case OpcodeUtils.Text: OPCODE.Text(decode_datas(datas, fin));
+            case OpcodeUtils.Close: OPCODE.Close(decode_datas(datas, fin));
+            case _: throw "NotImplemented 工事中";
         }
+    }
+
+    /**
+      * decode after second frames
+     */
+    static function decode_datas(datas: BytesInput, fin: Bool): String {
+        var data_header = datas.readByte();
+        var is_masked: Bool = (data_header & 0x80) == 0x80;
+        if (!is_masked) { throw "Client should mask datas."; }
+        var decode_payload_length =
+            function(len_of_byte: Int) {
+                var _payload = datas.read(len_of_byte).toHex();
+                trace('payload data = ${_payload}');
+                return Std.parseInt(_payload);
+            }
+        var payload_length = switch (data_header & 0x7f) {
+                                case 126: decode_payload_length(2);
+                                case 127: decode_payload_length(2);
+                                case i: i;
+                            }
+        var masking_key: Vector<Int> = new Vector(4);
+            [for (i in 0...4) masking_key.set(i, datas.readByte())];
+        // var payload_datas = datas.read(payload_length);
+        var decoded_payload_data = [
+            for (i in 0...payload_length)
+                // payload_datas.get(i) ^ masking_key[i % 4]
+                datas.readByte() ^ masking_key[i % 4]
+            ];
+        var result = new StringBuf();
+        decoded_payload_data.iter(function(c) { result.addChar(c); });
+        return result.toString();
     }
 
     /**

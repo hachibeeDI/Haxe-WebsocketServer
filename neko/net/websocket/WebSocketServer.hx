@@ -48,16 +48,16 @@ class WebSocketServer extends ThreadServer<Client, Message> {
         }
 
         var content = Protocol.decode_message(buf, pos, len);
-        // trace(content);
-        // trace('============================== get end\n');
-        return switch (content) {
-            case Text(st):
-                {msg: {content: Content(st)}, bytes: len};
-            case Close:
+        trace(content);
+        var msg = switch (content) {
+            case Text(st): st;
+            case Close(reason):
                 this.stopClient(c.soc);
-                {msg: {content: Content('')}, bytes: len};
+                reason;
             case _: throw 'unsupported opcode';
         }
+        trace('============================== get end\n');
+        return {msg: {content: Content(msg)}, bytes: len};
     }
 
     override function clientMessage(c: Client, msg: Message): Void {
@@ -75,7 +75,7 @@ class WebSocketServer extends ThreadServer<Client, Message> {
     }
 
     override function clientDisconnected(c: Client): Void {
-        // trace(c.id + " is disconnected.");
+        trace(c.id + " is disconnected.");
     }
 
     function hand_shake(c: Client, msg: String) {
