@@ -1,4 +1,6 @@
 
+[![Build Status](https://travis-ci.org/hachibeeDI/Haxe-WebsocketServer.png?branch=master)](https://travis-ci.org/hachibeeDI/Haxe-WebsocketServer)
+
 # Haxe-WebsocketServer 0.0.0.1
 
 Haxe製WebsocketServer。
