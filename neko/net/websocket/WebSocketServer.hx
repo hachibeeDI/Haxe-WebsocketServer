@@ -55,14 +55,9 @@ class WebSocketServer extends ThreadServer<Client, Message> {
                 var _sock = c.soc;
                 // response Close frame
                 _sock.output.write(Protocol.encode_message(content).getBytes());
-                // this.stopClient(c.soc);  FIXME: I don't really know why, but this method made stop server too.
-                // c.soc.close();
-                // === SouceCode on Github: https://github.com/HaxeFoundation/haxe/blob/development/std/neko/net/ThreadServer.hx ===
-                //     If only call sock.close cause pooling error in threadloop, so we may have to drop socket object from thread's member.
-                var infos = _sock.custom;  // ClientInfos<Client>
-                infos.thread.socks.remove(_sock);
-                // ==========================================================================================
-                this.doClientDisconnected(_sock, c);
+                // shutdown only write channel before close socket
+                _sock.shutdown(false, true);
+                this.stopClient(_sock);
                 reason;
             case _: throw 'unsupported opcode';
         }
