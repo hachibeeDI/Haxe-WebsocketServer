@@ -46,16 +46,25 @@ class WebSocketServer extends ThreadServer<Client, Message> {
             this.hand_shake(c, msg);
             return {msg: {content: HandShake(msg)}, bytes: len};
         }
+
         var content = Protocol.decode_message(buf, pos, len);
-        trace(content);
-        trace('============================== get end\n');
-        return {msg: {content: Content(content)}, bytes: len};
+        // trace(content);
+        // trace('============================== get end\n');
+        return switch (content) {
+            case Text(st):
+                {msg: {content: Content(st)}, bytes: len};
+            case Close:
+                this.stopClient(c.soc);
+                {msg: {content: Content('')}, bytes: len};
+            case _: throw 'unsupported opcode';
+        }
     }
 
     override function clientMessage(c: Client, msg: Message): Void {
         switch (msg.content) {
             case Content(s):
-                var _msg = Protocol.encode_message(s).getBytes();
+                var _msg = Protocol.encode_message(OPCODE.Text(s))
+                               .getBytes();
                 if (this.onmessage.length == 1) {
                     this.onmessage[0](c, _msg);
                 } else if (this.onmessage.length != 0) {

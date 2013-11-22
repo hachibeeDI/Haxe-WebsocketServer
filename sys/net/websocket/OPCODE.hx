@@ -1,7 +1,9 @@
 package sys.net.websocket;
 
+import haxe.io.BytesOutput;
+
+
 /**
-  * 
   * - opcodeについて
   * %x0 は継続フレームを表す
   * %x1 はテキストフレームを表す
@@ -13,10 +15,10 @@ package sys.net.websocket;
   * %xB-F は追加の制御フレーム用に予約済み
  */
 enum OPCODE {
-    Continuation;
-    Text;
-    Binary;
+    Continuation(v: String);
+    Text(v: String);
+    Binary(v: BytesOutput);
     Close;
-    Ping;
-    Pong;
+    Ping(v: String);
+    Pong(v: String);
 }

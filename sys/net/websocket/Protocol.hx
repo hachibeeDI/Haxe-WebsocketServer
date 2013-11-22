@@ -99,13 +99,13 @@ class Protocol {
     /**
       * via: http://d.hatena.ne.jp/gtk2k/20120203/1328275041
      */
-    public static function decode_message(buf: Bytes, pos: Int, len: Int): String {
+    public static function decode_message(buf: Bytes, pos: Int, len: Int): OPCODE {
         var datas = new BytesInput(buf, pos, len);
         var fin_rsv_opcode = datas.readByte();
         // 10000000 & 10000000 == 10000000  一番左端のビットが立っているかどうかの計算
         var fin: Bool = (fin_rsv_opcode & 0x80) == 0x80;
         var opcode = fin_rsv_opcode & 0x0f;
-        if (OPCODE.Text.equals(opcode)) {
+        if (opcode == OpcodeUtils.Text) {
             var data_header = datas.readByte();
             var is_masked: Bool = (data_header & 0x80) == 0x80;
             if (!is_masked) { throw "Client should mask datas."; }
@@ -130,7 +130,7 @@ class Protocol {
                 ];
             var result = new StringBuf();
             decoded_payload_data.iter(function(c) { result.addChar(c); });
-            return result.toString();
+            return OPCODE.Text(result.toString());
         } else {
             throw "NotImplemented 工事中";
         }
@@ -140,11 +140,17 @@ class Protocol {
       * this method is for servers, so FrameMasking will not define.
       * @param data: TODO: define abstract data type from String to Byte or Int
      */
-    public static function encode_message(data: String, ?opcode: OPCODE): BytesOutput {
-        if (opcode == null) opcode = Text;
+    public static function encode_message(opcode: OPCODE): BytesOutput {
+        return switch (opcode) {
+            case Text(s): return encode_text(s);
+            case _: throw "NotImplemented 工事中";
+        }
+    }
+
+    static function encode_text(data: String): BytesOutput {
         var buf = new BytesOutput();
         // 1|0|0|0 | opcode
-        buf.writeByte(0x80 | opcode.to_byte());
+        buf.writeByte(0x80 | OpcodeUtils.Text);
 
         var data_length = data.length;
         var payload_len = switch (data_length) {
