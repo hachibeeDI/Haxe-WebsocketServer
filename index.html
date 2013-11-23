@@ -27,7 +27,7 @@
                 console.log(e.data);
                 resultAreaObj.innerHTML += e.data + '<br>'
             };
-            ws.onerror = function () {
+            ws.onerror = function (e) {
                 console.log(e);
                 var resultAreaObj = document.getElementById('result');
                 resultAreaObj.innerHTML += '<span class="log">onerror</span>' + '<br>'

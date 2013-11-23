@@ -99,4 +99,14 @@ class WebSocketServer extends ThreadServer<Client, Message> {
 
         connected_clients_.push(c);
     }
+
+    public function broad_cast(msg: Bytes, ?self: Client): Void {
+        var targets = if (self == null) WebSocketServer.connected_clients_
+                      else WebSocketServer.connected_clients_.filter(function(c) { return c.id != self.id; });
+        targets.iter(
+            function(c) {
+                c.soc.output.write(msg);
+            }
+        );
+    }
 }
