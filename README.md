@@ -41,9 +41,7 @@ class Main {
         // add event listener
         webs.onmessage.push(
             function(client_self, msg) {
-                for (c in WebSocketServer.connected_clients_) {
-                    c.soc.output.write(msg);
-                }
+                webs.broad_cast(msg, client_self);
             }
         );
         webs.run("localhost", 1234);
