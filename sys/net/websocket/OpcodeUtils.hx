@@ -15,4 +15,17 @@ class OpcodeUtils {
     // public static inline var RECEIVED4 = 0x06;
     // public static inline var RECEIVED5 = 0x07;
     // B-Fも予約済み
+
+
+    public static function to_byte(opcode: OPCODE): Int {
+        return switch (opcode) {
+            case OPCODE.Continuation(s): OpcodeUtils.Continuation;
+            case OPCODE.Text(s): OpcodeUtils.Text;
+            case OPCODE.Binary(s): OpcodeUtils.Binary;
+            case OPCODE.Close(s): OpcodeUtils.Close;
+            case OPCODE.Ping(s): OpcodeUtils.Ping;
+            case OPCODE.Pong(s): OpcodeUtils.Pong;
+        }
+    }
+
 }

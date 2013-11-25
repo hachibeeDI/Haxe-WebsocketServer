@@ -108,6 +108,7 @@ class Protocol {
         return switch (opcode) {
             case OpcodeUtils.Text: OPCODE.Text(decode_datas(datas, fin));
             case OpcodeUtils.Close: OPCODE.Close(decode_datas(datas, fin));
+            case OpcodeUtils.Ping: OPCODE.Ping(decode_datas(datas, fin));
             case _: throw "NotImplemented 工事中";
         }
     }
@@ -148,18 +149,11 @@ class Protocol {
       * @param data: TODO: define abstract data type from String to Byte or Int
      */
     public static function encode_message(opcode: OPCODE): BytesOutput {
-        return switch (opcode) {
-            case Text(s): return encode_text(s);
-            case Close(reason): return encode_text(reason);
-            case _: throw "NotImplemented 工事中";
-        }
-    }
-
-    static function encode_text(data: String): BytesOutput {
         var buf = new BytesOutput();
         // 1|0|0|0 | opcode
-        buf.writeByte(0x80 | OpcodeUtils.Text);
+        buf.writeByte(0x80 | opcode.to_byte());
 
+        var data: String = opcode.getParameters()[0];
         var data_length = data.length;
         var payload_len = switch (data_length) {
                 case i if (i <= 125): i;

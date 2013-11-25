@@ -59,6 +59,11 @@ class WebSocketServer extends ThreadServer<Client, Message> {
                 _sock.shutdown(false, true);
                 this.stopClient(_sock);
                 reason;
+            case Ping(s):
+                this.send_pong(c.soc, s);  // TODO: may have to define default event?
+            case Pong(s):
+                trace("receive pong frame");  // TODO: kick event
+
             case _: throw 'unsupported opcode';
         }
         trace('============================== get end\n');
@@ -108,5 +113,26 @@ class WebSocketServer extends ThreadServer<Client, Message> {
                 c.soc.output.write(msg);
             }
         );
+    }
+
+    /**
+      * Pong frame should have same application frame as received Ping's application frame
+     */
+    public function send_pong(s: Socket, ping_content: String) {
+        s.output.write(
+                Protocol.encode_message(
+                    OPCODE.Pong(ping_content))
+                .getBytes());
+
+    }
+
+    /**
+     */
+    public function send_ping(s: Socket, content: String) {
+        s.output.write(
+                Protocol.encode_message(
+                    OPCODE.Ping(content))
+                .getBytes());
+
     }
 }
