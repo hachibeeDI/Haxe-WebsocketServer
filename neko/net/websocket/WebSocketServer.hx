@@ -50,7 +50,7 @@ class WebSocketServer extends ThreadServer<Client, Message> {
         var content = Protocol.decode_message(buf, pos, len);
         trace(content);
         var msg = switch (content) {
-            case Text(st): "null";
+            case Text(st): st;
             case Close(reason):
                 var _sock = c.soc;
                 // response Close frame
@@ -61,8 +61,10 @@ class WebSocketServer extends ThreadServer<Client, Message> {
                 reason;
             case Ping(s):
                 this.send_pong(c.soc, s);  // TODO: may have to define default event?
+                s;
             case Pong(s):
                 trace("receive pong frame");  // TODO: kick event
+                s;
 
             case _: throw 'unsupported opcode';
         }
