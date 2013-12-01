@@ -107,6 +107,9 @@ class WebSocketServer extends ThreadServer<Client, Message> {
         connected_clients_.push(c);
     }
 
+    /**
+      * Send encoded datas as broad_cast
+     */
     public function broad_cast(msg: Bytes, ?self: Client): Void {
         var targets = if (self == null) WebSocketServer.connected_clients_
                       else WebSocketServer.connected_clients_.filter(function(c) { return c.id != self.id; });
@@ -125,7 +128,6 @@ class WebSocketServer extends ThreadServer<Client, Message> {
                 Protocol.encode_message(
                     OPCODE.Pong(ping_content))
                 .getBytes());
-
     }
 
     /**
@@ -135,6 +137,5 @@ class WebSocketServer extends ThreadServer<Client, Message> {
                 Protocol.encode_message(
                     OPCODE.Ping(content))
                 .getBytes());
-
     }
 }
