@@ -55,8 +55,9 @@ class WebSocketServer extends ThreadServer<Client, Message> {
                 var _sock = c.soc;
                 // response Close frame
                 _sock.output.write(Protocol.encode_message(content).getBytes());
-                // shutdown only write channel before close socket
-                _sock.shutdown(false, true);
+                // TODO: 以下、要検証 "std/neko/net/ThreadServer.hx"::stopClient
+                // // shutdown only write channel before close socket
+                // _sock.shutdown(false, true);
                 this.stopClient(_sock);
                 reason;
             case Ping(s):
